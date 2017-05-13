@@ -10,6 +10,8 @@ import (
     "time"
     "net"
     "golang.org/x/crypto/ssh/agent"
+    "flag"
+    "strings"
 )
 
 func makeSigner(keyname string) (signer ssh.Signer, err error) {
@@ -63,9 +65,25 @@ func SSHAgent() ssh.AuthMethod {
 	return nil
 }
 
+func Usage() {
+     fmt.Printf("Usage: %s -cmd 'echo test; ping -c1 localhost' -hosts 'host1 host2'\n", os.Args[0])
+     flag.PrintDefaults()
+}
+
 func main() {
-    cmd := "echo \"### HOSTNAME $(hostname) ###\n\n\";" + os.Args[1] // In case we use ip address instead of FQDN
-    hosts := os.Args[2:]
+    var cmd string
+    var host_list string
+    flag.StringVar(&cmd, "cmd", "", "Command to run on host(s)")
+    flag.StringVar(&host_list, "hosts", "", "Hosts list")
+    if len(os.Args[1:]) == 0 {
+       Usage()
+       os.Exit(1)
+    }
+    flag.Parse()
+
+    cmd = "echo \"### HOSTNAME $(hostname) ###\n\n\";" + cmd // Print hostname In case we use ip address instead of FQDN
+    hosts := strings.Split(host_list, " ")
+    fmt.Println("HOSTS:", hosts)
 
     results := make(chan string, 10)
     timeout := time.After(120 * time.Second)
